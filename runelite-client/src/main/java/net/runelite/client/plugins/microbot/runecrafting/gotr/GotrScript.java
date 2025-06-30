@@ -3,6 +3,7 @@ package net.runelite.client.plugins.microbot.runecrafting.gotr;
 import com.google.common.collect.ImmutableList;
 import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.microbot.Microbot;
@@ -67,45 +68,46 @@ public class GotrScript extends Script {
 
     static boolean useNpcContact = true;
     private final List<Integer> runeIds = ImmutableList.of(
-            ItemID.NATURE_RUNE,
-            ItemID.LAW_RUNE,
-            ItemID.BODY_RUNE,
-            ItemID.DUST_RUNE,
-            ItemID.LAVA_RUNE,
-            ItemID.STEAM_RUNE,
-            ItemID.SMOKE_RUNE,
-            ItemID.SOUL_RUNE,
-            ItemID.WATER_RUNE,
-            ItemID.AIR_RUNE,
-            ItemID.EARTH_RUNE,
-            ItemID.FIRE_RUNE,
-            ItemID.MIND_RUNE,
-            ItemID.CHAOS_RUNE,
-            ItemID.DEATH_RUNE,
-            ItemID.BLOOD_RUNE,
-            ItemID.COSMIC_RUNE,
-            ItemID.ASTRAL_RUNE,
-            ItemID.MIST_RUNE,
-            ItemID.MUD_RUNE,
-            ItemID.WRATH_RUNE);
+            ItemID.NATURERUNE,
+            ItemID.LAWRUNE,
+            ItemID.BODYRUNE,
+            ItemID.DUSTRUNE,
+            ItemID.LAVARUNE,
+            ItemID.STEAMRUNE,
+            ItemID.SMOKERUNE,
+            ItemID.SOULRUNE,
+            ItemID.WATERRUNE,
+            ItemID.AIRRUNE,
+            ItemID.EARTHRUNE,
+            ItemID.FIRERUNE,
+            ItemID.MINDRUNE,
+            ItemID.CHAOSRUNE,
+            ItemID.DEATHRUNE,
+            ItemID.BLOODRUNE,
+            ItemID.COSMICRUNE,
+            ItemID.ASTRALRUNE,
+            ItemID.MISTRUNE,
+            ItemID.MUDRUNE,
+            ItemID.WRATHRUNE
+    );
 
-    private void initializeGuardianPortalInfo() {
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_AIR, new GuardianPortalInfo("AIR", 1, ItemID.AIR_RUNE, 26887, 4353, RuneType.ELEMENTAL, CellType.WEAK, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_MIND, new GuardianPortalInfo("MIND", 2, ItemID.MIND_RUNE, 26891, 4354, RuneType.CATALYTIC, CellType.WEAK, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_WATER, new GuardianPortalInfo("WATER", 5, ItemID.WATER_RUNE, 26888, 4355, RuneType.ELEMENTAL, CellType.MEDIUM, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_EARTH, new GuardianPortalInfo("EARTH", 9, ItemID.EARTH_RUNE, 26889, 4356, RuneType.ELEMENTAL, CellType.STRONG, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_FIRE, new GuardianPortalInfo("FIRE", 14, ItemID.FIRE_RUNE, 26890, 4357, RuneType.ELEMENTAL, CellType.OVERCHARGED, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_BODY, new GuardianPortalInfo("BODY", 20, ItemID.BODY_RUNE, 26895, 4358, RuneType.CATALYTIC, CellType.WEAK, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_COSMIC, new GuardianPortalInfo("COSMIC", 27, ItemID.COSMIC_RUNE, 26896, 4359, RuneType.CATALYTIC, CellType.MEDIUM, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.LOST_CITY.getState(Microbot.getClient())).orElse(null)));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_CHAOS, new GuardianPortalInfo("CHAOS", 35, ItemID.CHAOS_RUNE, 26892, 4360, RuneType.CATALYTIC, CellType.MEDIUM, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_NATURE, new GuardianPortalInfo("NATURE", 44, ItemID.NATURE_RUNE, 26897, 4361, RuneType.CATALYTIC, CellType.STRONG, QuestState.FINISHED));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_LAW, new GuardianPortalInfo("LAW", 54, ItemID.LAW_RUNE, 26898, 4362, RuneType.CATALYTIC, CellType.STRONG, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.TROLL_STRONGHOLD.getState(Microbot.getClient())).orElse(null)));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_DEATH, new GuardianPortalInfo("DEATH", 65, ItemID.DEATH_RUNE, 26893, 4363, RuneType.CATALYTIC, CellType.OVERCHARGED, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.MOURNINGS_END_PART_II.getState(Microbot.getClient())).orElse(null)));
-        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_BLOOD, new GuardianPortalInfo("BLOOD", 77, ItemID.BLOOD_RUNE, 26894, 4364, RuneType.CATALYTIC, CellType.OVERCHARGED, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.SINS_OF_THE_FATHER.getState(Microbot.getClient())).orElse(null)));
+    static {
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_AIR, new GuardianPortalInfo("AIR", 1, ItemID.AIRRUNE, 26887, 4353, RuneType.ELEMENTAL, CellType.WEAK, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_MIND, new GuardianPortalInfo("MIND", 2, ItemID.MINDRUNE, 26891, 4354, RuneType.CATALYTIC, CellType.WEAK, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_WATER, new GuardianPortalInfo("WATER", 5, ItemID.WATERRUNE, 26888, 4355, RuneType.ELEMENTAL, CellType.MEDIUM, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_EARTH, new GuardianPortalInfo("EARTH", 9, ItemID.EARTHRUNE, 26889, 4356, RuneType.ELEMENTAL, CellType.STRONG, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_FIRE, new GuardianPortalInfo("FIRE", 14, ItemID.FIRERUNE, 26890, 4357, RuneType.ELEMENTAL, CellType.OVERCHARGED, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_BODY, new GuardianPortalInfo("BODY", 20, ItemID.BODYRUNE, 26895, 4358, RuneType.CATALYTIC, CellType.WEAK, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_COSMIC, new GuardianPortalInfo("COSMIC", 27, ItemID.COSMICRUNE, 26896, 4359, RuneType.CATALYTIC, CellType.MEDIUM, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.LOST_CITY.getState(Microbot.getClient())).orElse(null)));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_CHAOS, new GuardianPortalInfo("CHAOS", 35, ItemID.CHAOSRUNE, 26892, 4360, RuneType.CATALYTIC, CellType.MEDIUM, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_NATURE, new GuardianPortalInfo("NATURE", 44, ItemID.NATURERUNE, 26897, 4361, RuneType.CATALYTIC, CellType.STRONG, QuestState.FINISHED));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_LAW, new GuardianPortalInfo("LAW", 54, ItemID.LAWRUNE, 26898, 4362, RuneType.CATALYTIC, CellType.STRONG, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.TROLL_STRONGHOLD.getState(Microbot.getClient())).orElse(null)));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_DEATH, new GuardianPortalInfo("DEATH", 65, ItemID.DEATHRUNE, 26893, 4363, RuneType.CATALYTIC, CellType.OVERCHARGED, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.MOURNINGS_END_PART_II.getState(Microbot.getClient())).orElse(null)));
+        guardianPortalInfo.put(ObjectID.GUARDIAN_OF_BLOOD, new GuardianPortalInfo("BLOOD", 77, ItemID.BLOODRUNE, 26894, 4364, RuneType.CATALYTIC, CellType.OVERCHARGED, Microbot.getClientThread().runOnClientThreadOptional(() -> Quest.SINS_OF_THE_FATHER.getState(Microbot.getClient())).orElse(null)));
     }
 
     public boolean run(GotrConfig config) {
-        this.config = config;
+        GotrScript.config = config;
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
                 if (!Microbot.isLoggedIn()) return;
@@ -113,7 +115,6 @@ public class GotrScript extends Script {
                 long startTime = System.currentTimeMillis();
 
                 if (!initCheck) {
-                    initializeGuardianPortalInfo();
                     if (!Rs2Magic.isLunar()) {
                         Microbot.log("Lunar spellbook not found...disabling npc contact");
                         useNpcContact = false;
@@ -147,11 +148,8 @@ public class GotrScript extends Script {
                     }
                 }
 
-                boolean isInMinigame = !isOutsideBarrier() && isInMainRegion();
-
-
+                final boolean isInMinigame = !isOutsideBarrier() && isInMainRegion();
                 if (isInMinigame) {
-
                     if (lootChisel()) return;
 
                     if (waitingForGameToStart(timeToStart)) return;
@@ -217,7 +215,7 @@ public class GotrScript extends Script {
                 if (waitForMinigameToStart()) return;
 
 
-                long endTime = System.currentTimeMillis();
+                final long endTime = System.currentTimeMillis();
                 totalTime = endTime - startTime;
                 System.out.println("Total time for loop " + totalTime);
 
@@ -304,19 +302,17 @@ public class GotrScript extends Script {
 
 
     private void takeUnchargedCells() {
+        if (Rs2Inventory.hasItem("Uncharged cell")) return;
 
-        if (!Rs2Inventory.hasItem("Uncharged cell")) {
-            // Drop one guardian essence if inventory is full
-            if (Rs2Inventory.isFull()) {
-                if (Rs2Inventory.drop(ItemID.GUARDIAN_ESSENCE)) {
-                    Microbot.log("Dropped one Guardian essence to make space for Uncharged cell");
-                }
-            }
-
-            Rs2GameObject.interact(ObjectID.UNCHARGED_CELLS_43732, "Take-10");
-            log("Taking uncharged cells...");
-            Rs2Player.waitForAnimation();
+        // Drop one guardian essence if inventory is full
+        if (Rs2Inventory.isFull()) {
+            if (!Rs2Inventory.drop(ItemID.GOTR_GUARDIAN_ESSENCE)) return;
+            Microbot.log("Dropped one Guardian essence to make space for Uncharged cell");
         }
+
+        Rs2GameObject.interact(ObjectID.UNCHARGED_CELLS_43732, "Take-10");
+        log("Taking uncharged cells...");
+        Rs2Player.waitForAnimation();
     }
 
     private boolean lootChisel() {
@@ -338,7 +334,7 @@ public class GotrScript extends Script {
             Rs2GameObject.interact(Microbot.getClient().getHintArrowPoint());
             log("Found a portal spawn...interacting with it...");
             Rs2Player.waitForWalking();
-            sleepUntil(() -> isInHugeMine());
+            sleepUntil(this::isInHugeMine);
             sleepUntil(() -> getGuardiansPower() > 0);
             return true;
         }
@@ -358,38 +354,40 @@ public class GotrScript extends Script {
     }
 
     private boolean enterAltar() {
-        GameObject availableAltar = getAvailableAltars().stream().findFirst().orElse(null);
-        if (availableAltar != null && !Rs2Player.isMoving()) {
-            log("Entering with altar " + availableAltar.getId());
-            Rs2GameObject.interact(availableAltar);
-            state = GotrState.ENTER_ALTAR;
-            Global.sleepUntil(() -> !isInMainRegion() || !Objects.equals(getAvailableAltars().stream().findFirst().orElse(null), availableAltar), 5000);
-            sleep(Rs2Random.randomGaussian(1000, 300));
+        if (Rs2Player.isMoving()) return false;
 
-            return true;
-        }
-        return false;
+        final List<GameObject> altars = getAvailableAltars();
+        if (altars.isEmpty()) return false;
+
+        if (!Rs2GameObject.interact(altars.getFirst())) return false;
+
+        state = GotrState.ENTER_ALTAR;
+
+        final String[] altarNames = altars.stream().map(altar -> guardianPortalInfo.get(altar.getId()).getName()).toArray(String[]::new);
+        log("Available altars=" + Arrays.toString(altarNames) + ". Entering altar=" + altarNames[0]);
+        Global.sleepUntil(() -> !isInMainRegion() || !altars.getFirst().equals(getAvailableAltars().stream().findFirst().orElse(null)), 5000);
+        sleep(Rs2Random.randomGaussian(1000, 300));
+        return true;
     }
 
     private boolean craftGuardianEssences() {
-        if (Rs2GameObject.interact(ObjectID.WORKBENCH_43754)) {
-            state = GotrState.CRAFT_GUARDIAN_ESSENCE;
-            sleep(Rs2Random.randomGaussian(Rs2Random.between(600, 900), Rs2Random.between(150, 300)));
-            log("Crafting guardian essences...");
-            return true;
-        }
-       return false;
+        if (!Rs2GameObject.interact(ObjectID.WORKBENCH_43754)) return false;
+
+        state = GotrState.CRAFT_GUARDIAN_ESSENCE;
+        log("Crafting guardian essences...");
+        sleep(Rs2Random.randomGaussian(Rs2Random.between(600, 900), Rs2Random.between(150, 300)));
+        return true;
     }
 
     private boolean leaveLargeMine() {
-        if (isInLargeMine()) {
-            Rs2GameObject.interact(ObjectID.RUBBLE_43726);
-            Rs2Player.waitForAnimation();
-            log("Leaving large mine...");
-            state = GotrState.LEAVING_LARGE_MINE;
-            return true;
-        }
-        return false;
+        if (!isInLargeMine()) return false;
+
+        if (!Rs2GameObject.interact(ObjectID.RUBBLE_43726)) return false;
+
+        state = GotrState.LEAVING_LARGE_MINE;
+        log("Leaving large mine...");
+        Rs2Player.waitForAnimation();
+        return true;
     }
 
     private boolean fillPouches() {
@@ -462,21 +460,20 @@ public class GotrScript extends Script {
     }
 
     private static boolean enterMinigame() {
-        if (Rs2GameObject.interact(ObjectID.BARRIER_43700, "quick-pass")) {
-            Rs2Player.waitForWalking();
-            state = GotrState.ENTER_GAME;
-            GotrScript.shouldMineGuardianRemains = true;
-            log("Entering game...");
-            return true;
-        }
-        return false;
+        if (!Rs2GameObject.interact(ObjectID.BARRIER_43700, "quick-pass")) return false;
+
+        state = GotrState.ENTER_GAME;
+        log("Entering game...");
+        Rs2Player.waitForWalking();
+        GotrScript.shouldMineGuardianRemains = true;
+        return true;
     }
 
     private void checkPouches(boolean anyPouchUnknown, int mean, int stddev) {
-        if (anyPouchUnknown) {
-            Rs2Inventory.checkPouches();
-            sleep(Rs2Random.randomGaussian(mean, stddev));
-        }
+        if (!anyPouchUnknown) return;
+
+        Rs2Inventory.checkPouches();
+        sleep(Rs2Random.randomGaussian(mean, stddev));
     }
 
     private boolean mineHugeGuardianRemain() {
@@ -594,7 +591,7 @@ public class GotrScript extends Script {
      */
     private static void repairWithCordelia() {
         if (!Rs2Inventory.hasDegradedPouch()) return;
-        if (!Rs2Inventory.hasItem(ItemID.ABYSSAL_PEARLS)) return;
+        if (!Rs2Inventory.hasItem(ItemID.ABYSSAL_PEARL)) return;
         Rs2NpcModel pouchRepairNpc = Rs2Npc.getNpc(NpcID.APPRENTICE_CORDELIA_12180);
         if (pouchRepairNpc == null) return;
         if (!Rs2Npc.hasAction(pouchRepairNpc.getId(), "Repair")) return;
@@ -642,54 +639,58 @@ public class GotrScript extends Script {
         return Microbot.getItemManager();
     }
 
+    private static final int ELEMENTAL_RUNE_WIDGET_ID = 48889857;
     public boolean isInMiniGame() {
-        int parentWidgetId = 48889857;
-        Widget elementalRuneWidget = Microbot.getClient().getWidget(parentWidgetId);
-        return elementalRuneWidget != null;
+        return Microbot.getClient().getWidget(ELEMENTAL_RUNE_WIDGET_ID) != null;
     }
 
     public static boolean isInMainRegion() {
         return Rs2Player.getWorldLocation().getRegionID() == 14484;
     }
 
+    private static final int GOTR_TIMER_WIDGET_ID = 48889861;
     public static int getStartTimer() {
-        Widget timerWidget = Rs2Widget.getWidget(48889861);
-        if (timerWidget != null) {
-            String timer = timerWidget.getText();
-            if (timer == null) return -1;
-            // Split the timer string into minutes and seconds
-            String[] timeParts = timer.split(":");
+        final Widget timerWidget = Rs2Widget.getWidget(GOTR_TIMER_WIDGET_ID);
+        if (timerWidget == null) return -1;
 
-            // Ensure there are two parts (minutes and seconds)
-            if (timeParts.length == 2) {
-                int minutes = Integer.parseInt(timeParts[0]);
-                int seconds = Integer.parseInt(timeParts[1]);
+        final String timer = timerWidget.getText();
+        if (timer == null) return -1;
 
-                // Convert the timer to total seconds
-                int totalSeconds = (minutes * 60) + seconds;
-                return totalSeconds;
-            }
+        // Split the timer string into minutes and seconds
+        String[] timeParts = timer.split(":");
+
+        // Ensure there are two parts (minutes and seconds)
+        if (timeParts.length != 2) return -1;
+
+        try {
+            final int minutes = Integer.parseInt(timeParts[0]);
+            final int seconds = Integer.parseInt(timeParts[1]);
+
+            // Convert the timer to total seconds
+            return (minutes * 60) + seconds;
+        } catch (NumberFormatException e) {
+            Microbot.log("Invalid GoTR Timer Number Format '" + timer + "'");
+            return -1;
         }
-        return -1;
     }
 
     public static int getTimeSincePortal() {
-        if(getStartTimer() == -1) {
-            return -1;
-        }
-        int firstPortalTimeAdjustment = isFirstPortal ? 40 : 0;
+        if(getStartTimer() == -1) return -1;
+
+        final int firstPortalTimeAdjustment = isFirstPortal ? 40 : 0;
         return timeSincePortal.map(instant -> (int) ChronoUnit.SECONDS.between(instant, Instant.now())-firstPortalTimeAdjustment).orElse(-1);
 
     }
 
+    private static final int GOTR_CATALYTIC_POINTS_VARBIT = 13685;
+    private static final int GOTR_ELEMENTAL_POINTS_VARBIT = 13686;
     public static List<GameObject> getAvailableAltars() {
-        int elementalPoints = Microbot.getVarbitValue(13686);
-        int catalyticPoints = Microbot.getVarbitValue(13685);
+        final int catalyticPoints = Microbot.getVarbitValue(GOTR_CATALYTIC_POINTS_VARBIT);
+        final int elementalPoints = Microbot.getVarbitValue(GOTR_ELEMENTAL_POINTS_VARBIT);
         if (config.Mode() == Mode.BALANCED) {
             Microbot.log(elementalPoints < catalyticPoints ? "We have " + elementalPoints + " elemental points, looking for elemental altar..." : "We have " + catalyticPoints +" catalytic points, looking for catalytic altar...");
         }
-        return Rs2GameObject.getGameObjects().stream()
-                .filter(x -> {
+        return Rs2GameObject.getGameObjects().stream().filter(x -> {
 
                     if (!guardianPortalInfo.containsKey(x.getId())) return false;
                     if (GotrScript.guardianPortalInfo.get(x.getId()).getRequiredLevel()
@@ -700,17 +701,12 @@ public class GotrScript extends Script {
                         return false;
                     }
 
-                    if (((DynamicObject) x.getRenderable()).getAnimation() == null) {
-                        return false;
-                    }
-                    if (((DynamicObject) x.getRenderable()).getAnimation().getId() != 9363) {
-                        return false;
-                    }
-
-                    return true;
-
+                    final Animation animation = ((DynamicObject) x.getRenderable()).getAnimation();
+                    return animation != null && animation.getId() == net.runelite.api.gameval.AnimationID.STATUE_RUNESTONE01_ACTIVE;
                 })
-                .sorted((config.Mode() == Mode.BALANCED && elementalPoints < catalyticPoints) || config.Mode() == Mode.ELEMENTAL ? Comparator.comparingInt(TileObject::getId) : Comparator.comparingInt(TileObject::getId).reversed())
+                .sorted((config.Mode() == Mode.BALANCED && elementalPoints < catalyticPoints) || config.Mode() == Mode.ELEMENTAL ?
+                        Comparator.comparingInt(TileObject::getId) :
+                        Comparator.comparingInt(TileObject::getId).reversed())
                 .collect(Collectors.toList());
     }
 
