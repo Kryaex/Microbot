@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.microbot.util.inventory;
 
+import lombok.Getter;
 import net.runelite.api.Item;
 import net.runelite.api.ItemComposition;
 import net.runelite.api.ItemContainer;
@@ -68,6 +69,19 @@ public class Rs2Inventory {
     public static ItemContainer inventory() {
         return Microbot.getClient().getItemContainer(InventoryID.INV);
     }
+
+    @Getter
+    private static final ItemProvider itemProvider = new ItemProvider() {
+        @Override
+        public int getCapacity() {
+            return CAPACITY;
+        }
+
+        @Override
+        public Stream<Rs2ItemModel> getAll() {
+            return items();
+        }
+    };
 
     public static void storeInventoryItemsInMemory(ItemContainerChanged e) {
         assert Microbot.getClient().isClientThread();
