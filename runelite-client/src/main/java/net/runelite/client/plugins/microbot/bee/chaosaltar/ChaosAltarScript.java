@@ -2,7 +2,6 @@ package net.runelite.client.plugins.microbot.bee.chaosaltar;
 
 import net.runelite.api.GameObject;
 import net.runelite.api.Skill;
-import net.runelite.api.TileObject;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.microbot.Microbot;
@@ -51,7 +50,8 @@ public class ChaosAltarScript extends Script {
 
                 if (!autoRetaliate) {
                     Rs2Combat.setAutoRetaliate(false);
-                    autoRetaliate = true;}
+                    autoRetaliate = true;
+                }
 
                 // Determine current state
                 currentState = determineState();
@@ -92,22 +92,22 @@ public class ChaosAltarScript extends Script {
         return true;
     }
 
+    private static final int CHAOS_ALTAR = 411;
+
+    private GameObject getChaosAltar() {
+        return (GameObject) Rs2GameObject
+                .getAll(obj -> obj.getId() == CHAOS_ALTAR && obj instanceof GameObject)
+                .stream().findFirst().orElse(null);
+    }
+
     public boolean isAtChaosAltar() {
-        for (TileObject obj : Rs2GameObject.getAll()) {
-            if (obj.getId() == 411) {
-                if (obj instanceof GameObject) {
-                    GameObject gameObject = (GameObject) obj;
-                    System.out.println("Found Chaos Altar GameObject at: " + gameObject.getWorldLocation());
-                    if (Rs2GameObject.isReachable(gameObject)) {
-                        Microbot.log("Chaos Altar is reachable.");
-                        return true;
-                    } else {
-                        System.out.println("Chaos Altar found but not reachable.");
-                    }
-                }
-            }
-        }
-        return false;
+        final GameObject chaosAltar = getChaosAltar();
+        if (chaosAltar == null) return false;
+
+        Microbot.log("Found Chaos Altar GameObject at: " + chaosAltar.getWorldLocation());
+        final boolean reachable = Rs2GameObject.isReachable(chaosAltar);
+        Microbot.log("Chaos Altar is " + (reachable ? "" : "not") + " reachable.");
+        return reachable;
     }
 
 
@@ -138,6 +138,11 @@ public class ChaosAltarScript extends Script {
         }
     }
 
+    private Rs2ItemModel getLastBone() {
+        return Rs2Inventory.getBones().stream()
+                .max(Comparator.comparingInt(Rs2ItemModel::getSlot)).orElse(null);
+    }
+
     private void offerBones() {
         System.out.println("Offering bones at altar- IN OFFERBONES1");
 
@@ -148,18 +153,16 @@ public class ChaosAltarScript extends Script {
 
         if (Rs2Player.isInCombat()) {offerBonesFast(); return;}
 
-        var lastBones = Rs2Inventory.getBones().stream().max(Comparator.comparingInt(Rs2ItemModel::getSlot)).orElse(null);
-        var interactSlot = lastBones != null ? lastBones.getSlot() : 2;
+        final Rs2ItemModel bone = getLastBone();
+        if (bone == null || !isRunning()) return;
 
-        if (Rs2Inventory.contains(DRAGON_BONES) && isRunning()) {
-            Rs2Inventory.slotInteract(interactSlot, "use");
-            sleep(300, 500);
-            Rs2GameObject.interact(411);
-            sleep(300, 500);
+        Rs2Inventory.interact(bone, "use");
+        sleep(300, 500);
+        Rs2GameObject.interact(CHAOS_ALTAR);
+        sleep(300, 500);
 
-            int randomWait = Rs2Random.between(500,2000);
-            Rs2Inventory.waitForInventoryChanges(randomWait);
-        }
+        int randomWait = Rs2Random.between(500,2000);
+        Rs2Inventory.waitForInventoryChanges(randomWait);
     }
 
     private void offerBonesFast() {
@@ -169,16 +172,15 @@ public class ChaosAltarScript extends Script {
             if (Rs2Player.getWorldLocation().getY() > 3650)
             {walkTo(CHAOS_ALTAR_POINT);}
         }
-        var lastBones = Rs2Inventory.getBones().stream().max(Comparator.comparingInt(Rs2ItemModel::getSlot)).orElse(null);
-        var interactSlot = lastBones != null ? lastBones.getSlot() : 2;
 
-        while (Rs2Inventory.contains(DRAGON_BONES)
+        Rs2ItemModel bone;
+        while ((bone = getLastBone()) != null
                 && isRunning()
                 && !Rs2Player.isInCombat()
-                && Rs2GameObject.exists(411)) {
-            Rs2Inventory.slotInteract(interactSlot, "use");
+                && Rs2GameObject.exists(CHAOS_ALTAR)) {
+            Rs2Inventory.interact(bone, "use");
             sleep(100, 300);
-            Rs2GameObject.interact(411);
+            Rs2GameObject.interact(CHAOS_ALTAR);
             Rs2Player.waitForXpDrop(Skill.PRAYER);
 
             // Small random delay between offerings
@@ -237,17 +239,11 @@ public class ChaosAltarScript extends Script {
         boolean hasAnyBones = Rs2Inventory.contains(DRAGON_BONES);
         boolean atAltar = isAtChaosAltar();
 
-        if (!inWilderness && !hasBones) {
-            return State.BANK;
+        if (!inWilderness) {
+            return hasBones ? State.TELEPORT_TO_WILDERNESS : State.BANK;
         }
-        if (!inWilderness && hasBones) {
-            return State.TELEPORT_TO_WILDERNESS;
-        }
-        if (inWilderness && hasAnyBones && !atAltar) {
-            return State.WALK_TO_ALTAR;
-        }
-        if (inWilderness && hasAnyBones && atAltar) {
-            return State.OFFER_BONES;
+        if (inWilderness && hasAnyBones) {
+            return atAltar ? State.OFFER_BONES : State.WALK_TO_ALTAR;
         }
         if (inWilderness && !hasAnyBones) {
             return State.DIE_TO_NPC;
