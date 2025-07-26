@@ -79,10 +79,11 @@ public class InventorySetupsItem
 				item.getSlot() == -1;
 	}
 
-	public String getName() {
+	// Need external access to this method to make inv items fuzzy
+	public static String fuzzyName(String name, boolean fuzzy) {
 		String itemName = name;
 
-		if (isFuzzy()) {
+		if (fuzzy) {
 			String[] splitItemName = itemName.split("\\(\\d+\\)$");
 			itemName = (splitItemName.length == 0) ? itemName : splitItemName[0];
 		}
@@ -96,8 +97,14 @@ public class InventorySetupsItem
 		return itemName;
 	}
 
+	public String getName() {
+		return fuzzyName(name, isFuzzy());
+	}
+
 	public boolean matches(InventorySetupsItem item) {
-		return isFuzzy() ? this.getName().toLowerCase().contains(item.getName().toLowerCase()) : Objects.equals(this.getId(), item.getId());
+		// this change ensures that i.matches(j) == j.matches(i)
+		if (item.isFuzzy() != this.isFuzzy()) return false;
+		return isFuzzy() ? this.getName().equalsIgnoreCase(item.getName()) : Objects.equals(this.getId(), item.getId());
 	}
 
 	public static boolean isBarrowsItem(String lowerCaseName) {

@@ -1,16 +1,11 @@
 package net.runelite.client.plugins.microbot.util;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.plugins.microbot.Microbot;
@@ -29,11 +24,6 @@ import net.runelite.client.plugins.microbot.util.misc.Rs2Potion;
 import net.runelite.client.plugins.microbot.util.player.Rs2Player;
 import org.slf4j.event.Level;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -100,66 +90,92 @@ public class Rs2InventorySetup {
         return _mainScheduler != null && _mainScheduler.isCancelled();
     }
 
-    /**
-     * Loads the inventory setup from the bank.
-     *
-     * @return true if the inventory matches the setup after loading, false otherwise.
-     */
+	public Map<Object, Integer> getRequiredQuantity(Collection<InventorySetupsItem> items) {
+		return items.stream().filter(item -> !InventorySetupsItem.itemIsDummy(item))
+				.collect(Collectors.toMap(
+						item -> item.isFuzzy() ? item.getName() : item.getId(),
+						InventorySetupsItem::getQuantity,
+						Integer::sum
+				));
+	}
+
+	public Map<Object, Integer> getMissingQuantity(Collection<InventorySetupsItem> items) {
+		// TODO: this probably does not need to be recalculated every call
+		// TODO: Pass 'Rs2Inventory.all()' so it can be used for both equipment & inv
+		final Map<Object, Integer> quantity = new HashMap<>(getRequiredQuantity(items));
+		Rs2Inventory.all().forEach(item -> {
+			int itemQuantity = item.getQuantity();
+			// try to remove inv quantity from non-fuzzy first
+			if (quantity.containsKey(item.getId())) {
+				final int required = quantity.get(item.getId());
+				final int filled = Math.min(required, itemQuantity);
+
+				quantity.put(item.getId(), required-filled);
+				itemQuantity -= filled;
+			}
+
+			if (itemQuantity > 0) {
+				final String fuzzyName = InventorySetupsItem.fuzzyName(item.getName(), true);
+				final int finalItemQuantity = itemQuantity;
+				quantity.computeIfPresent(fuzzyName, (key, oldValue) -> Math.max(oldValue-finalItemQuantity, 0));
+			}
+		});
+		return quantity;
+	}
+
+	private boolean hasBankItem(Object object, int quantity) {
+		if (object instanceof String) return Rs2Bank.hasBankItem((String) object, quantity);
+		return Rs2Bank.hasBankItem((int) object, quantity);
+	}
+
+	private boolean withdrawX(Object object, int quantity) {
+		if (object instanceof String) return Rs2Bank.withdrawX((String) object, quantity);
+		return Rs2Bank.withdrawX((int) object, quantity);
+	}
+
+	/**
+	 * Loads the inventory setup from the bank.
+	 *
+	 * @return true if the inventory matches the setup after loading, false otherwise.
+	 */
 	public boolean loadInventory() {
-		Rs2Bank.openBank();
-		if (!Rs2Bank.isOpen()) {
+		if (!Rs2Bank.openBank()) {
 			return false;
 		}
 
-        if (!Rs2Bank.findLockedSlots().isEmpty()) {
-            Rs2Bank.toggleAllLocks();
-        }
+		if (!Rs2Bank.findLockedSlots().isEmpty()) {
+			Rs2Bank.toggleAllLocks();
+		}
 
 		Rs2Bank.depositAllExcept(itemsToNotDeposit());
 
-		List<InventorySetupsItem> setupItems = inventorySetup.getInventory();
+		final Map<Object, Integer> missingQuantity = getMissingQuantity(inventorySetup.getInventory());
 
-		for (InventorySetupsItem item : setupItems) {
-			if (isMainSchedulerCancelled()) break;
-			if (InventorySetupsItem.itemIsDummy(item)) continue;
+		for (Map.Entry<Object, Integer> itemAndQuantity : missingQuantity.entrySet()) {
+			if (isMainSchedulerCancelled()) return false;
 
-			List<InventorySetupsItem> matchingItems = setupItems.stream()
-				.filter(i -> i.matches(item))
-				.collect(Collectors.toList());
-
-			int withdrawQuantity = calculateWithdrawQuantity(matchingItems, item);
-			if (withdrawQuantity == 0) continue;
-
-			String lowerCaseName = item.getName().toLowerCase();
-			boolean isFuzzy = item.isFuzzy();
-			Object identifier = isFuzzy ? lowerCaseName : item.getId();
-
-			boolean hasBankItem = isFuzzy
-				? Rs2Bank.hasBankItem((String) identifier, withdrawQuantity, false)
-				: Rs2Bank.hasBankItem((int) identifier, withdrawQuantity);
-
-			if (!hasBankItem) {
+			if (!hasBankItem(itemAndQuantity.getKey(), itemAndQuantity.getValue())) {
 				Microbot.pauseAllScripts.compareAndSet(false, true);
-				Microbot.log("Bank is missing the following item: " + item.getName(), Level.WARN);
+				Microbot.log("Bank is missing the following item: " + itemAndQuantity.getKey(), Level.WARN);
 				return false;
 			}
 
-			withdrawItem(item, withdrawQuantity);
+			withdrawX(itemAndQuantity.getKey(), itemAndQuantity.getValue());
 		}
 
-		List<InventorySetupsItem> itemsWithSlots = setupItems.stream()
-			.filter(item -> !InventorySetupsItem.itemIsDummy(item) && item.getSlot() >= 0)
-			.collect(Collectors.toList());
+		List<InventorySetupsItem> itemsWithSlots = inventorySetup.getInventory().stream()
+				.filter(item -> !InventorySetupsItem.itemIsDummy(item) && item.getSlot() >= 0)
+				.collect(Collectors.toList());
 
 		sortInventoryItems(itemsWithSlots);
 
-        if (inventorySetup.getRune_pouch() != null) {
+		if (inventorySetup.getRune_pouch() != null) {
 			Map<Runes, InventorySetupsItem> inventorySetupRunes = inventorySetup.getRune_pouch().stream()
-				.filter(item -> item.getId() != -1 && item.getQuantity() > 0)
-				.collect(Collectors.toMap(
-					item -> Runes.byItemId(item.getId()),
-					item -> item
-				));
+					.filter(item -> item.getId() != -1 && item.getQuantity() > 0)
+					.collect(Collectors.toMap(
+							item -> Runes.byItemId(item.getId()),
+							item -> item
+					));
 
 			if (!Rs2RunePouch.loadFromInventorySetup(inventorySetupRunes)) {
 				Microbot.log("Failed to load rune pouch.", Level.WARN);
@@ -169,76 +185,10 @@ public class Rs2InventorySetup {
 
 		sleep(800, 1200);
 
-        lockLockedItemsFromSetup(inventorySetup);
+		lockLockedItemsFromSetup(inventorySetup);
 
 		return doesInventoryMatch();
 	}
-
-    /**
-     * Calculates the quantity of an item to withdraw based on the current inventory state.
-     *
-     * @param setupItems              List of items to consider.
-     * @param setupItem The inventory setup item.
-     * @return The quantity to withdraw.
-     */
-	private int calculateWithdrawQuantity(List<InventorySetupsItem> setupItems, InventorySetupsItem setupItem) {
-		int itemId = setupItem.getId();
-		String itemName = setupItem.getName().toLowerCase();
-		boolean isFuzzy = setupItem.isFuzzy();
-
-		Rs2ItemModel rs2Item = Rs2Inventory.get(itemId);
-		boolean isStackable = rs2Item != null && rs2Item.isStackable();
-
-		int desiredQuantity = setupItems.stream()
-			.mapToInt(InventorySetupsItem::getQuantity)
-			.sum();
-
-		int currentQuantity = isFuzzy
-			? Rs2Inventory.itemQuantity(itemName)
-			: Rs2Inventory.itemQuantity(itemId);
-
-		if (currentQuantity >= desiredQuantity) {
-			return 0;
-		}
-
-		if (!isStackable) {
-			long alreadyPresent = isFuzzy
-				? Rs2Inventory.items(i -> i.getName().toLowerCase().contains(itemName)).count()
-				: Rs2Inventory.items(i -> i.getId() == itemId).count();
-
-			int missing = setupItems.size() - (int) alreadyPresent;
-			return Math.max(missing, 0);
-		}
-
-		return desiredQuantity - currentQuantity;
-	}
-
-    /**
-     * Withdraws an item from the bank.
-     *
-     * @param item     The item to withdraw.
-     * @param quantity The quantity to withdraw.
-     */
-    private void withdrawItem(InventorySetupsItem item, int quantity) {
-		boolean useName = item.isFuzzy();
-		Object identifier = useName ? item.getName().toLowerCase() : item.getId();
-
-		if (quantity > 1) {
-			if (useName) {
-				Rs2Bank.withdrawX((String) identifier, quantity);
-			} else {
-				Rs2Bank.withdrawX((int) identifier, quantity);
-			}
-		} else {
-			if (useName) {
-				Rs2Bank.withdrawItem((String) identifier);
-			} else {
-				Rs2Bank.withdrawItem((int) identifier);
-			}
-		}
-		// Using wait for inventory changes here makes sure the inventory is updated more reliably to avoid withdrawing excess items.
-		Rs2Inventory.waitForInventoryChanges(5000);
-    }
 
     /**
      * Loads the equipment setup from the bank.
