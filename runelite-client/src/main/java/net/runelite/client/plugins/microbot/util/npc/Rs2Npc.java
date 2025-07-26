@@ -187,27 +187,7 @@ public class Rs2Npc {
         return (double) ratio / (double) scale * 100;
     }
 
-    /**
-     * Retrieves a stream of NPCs filtered by a given condition.
-     *
-     * <p>This method filters NPCs based on the specified predicate, allowing for flexible
-     * selection of NPCs based on various attributes such as name, interaction status, health, etc.</p>
-     *
-     * @param predicate A {@link Predicate} that defines the filtering condition for NPCs.
-     * @return A sorted {@link Stream} of {@link Rs2NpcModel} objects that match the given predicate.
-     */
-    public static Stream<Rs2NpcModel> getNpcs(Predicate<Rs2NpcModel> predicate) {
-        List<Rs2NpcModel> npcList = Optional.of(Microbot.getClient().getTopLevelWorldView().npcs().stream()
-                .filter(Objects::nonNull)
-                .map(Rs2NpcModel::new)
-                .filter(x -> x.getName() != null)
-                .filter(predicate)
-                .sorted(Comparator.comparingInt(value -> value.getLocalLocation().distanceTo(Microbot.getClient().getLocalPlayer().getLocalLocation())))
-                .collect(Collectors.toList()))
-                .orElse(new ArrayList<>());
-
-        return npcList.stream();
-    }
+    private static final Rs2NpcModel[] EMPTY_ARRAY = new Rs2NpcModel[0];
 
     /**
      * Retrieves a stream of all NPCs in the game world.
@@ -218,7 +198,31 @@ public class Rs2Npc {
      * @return A sorted {@link Stream} of all {@link Rs2NpcModel} objects in the game world.
      */
     public static Stream<Rs2NpcModel> getNpcs() {
-        return getNpcs(npc -> true);
+        return Arrays.stream(Microbot.getClientThread().runOnClientThreadOptional(() -> {
+            assert Microbot.getClient().isClientThread();
+            final WorldView wv = Microbot.getClient().getTopLevelWorldView();
+            if (wv == null) return EMPTY_ARRAY;
+            final IndexedObjectSet<? extends NPC> npcs = wv.npcs();
+            if (npcs == null) return EMPTY_ARRAY;
+            return npcs.stream().sequential().filter(Objects::nonNull)
+                    .filter(npc -> npc.getName() != null)
+                    .map(Rs2NpcModel::new)
+                    .sorted(Comparator.comparingInt(value -> value.getLocalLocation().distanceTo(Microbot.getClient().getLocalPlayer().getLocalLocation())))
+                    .toArray(Rs2NpcModel[]::new);
+        }).orElse(EMPTY_ARRAY));
+    }
+
+    /**
+     * Retrieves a stream of NPCs filtered by a given condition.
+     *
+     * <p>This method filters NPCs based on the specified predicate, allowing for flexible
+     * selection of NPCs based on various attributes such as name, interaction status, health, etc.</p>
+     *
+     * @param predicate A {@link Predicate} that defines the filtering condition for NPCs.
+     * @return A sorted {@link Stream} of {@link Rs2NpcModel} objects that match the given predicate.
+     */
+    public static Stream<Rs2NpcModel> getNpcs(Predicate<Rs2NpcModel> predicate) {
+        return getNpcs().filter(predicate);
     }
 
     /**
