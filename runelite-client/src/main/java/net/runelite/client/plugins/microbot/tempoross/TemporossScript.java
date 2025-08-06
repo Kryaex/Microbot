@@ -26,6 +26,7 @@ import net.runelite.client.plugins.microbot.util.walker.Rs2Walker;
 import net.runelite.client.plugins.microbot.util.combat.Rs2Combat;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,16 +48,16 @@ public class TemporossScript extends Script {
     public static int ESSENCE;
 
     public static TemporossConfig temporossConfig;
-    public static State state = State.INITIAL_CATCH;
+    public static volatile State state = State.INITIAL_CATCH;
     public static TemporossWorkArea workArea = null;
     public static boolean isFilling = false;
     public static boolean isFightingFire = false;
     public static HarpoonType harpoonType;
     public static Rs2NpcModel temporossPool;
-    public static List<Rs2NpcModel> sortedFires = new ArrayList<>();
-    public static List<GameObject> sortedClouds = new ArrayList<>();
-    public static List<Rs2NpcModel> fishSpots = new ArrayList<>();
-    public static List<WorldPoint> walkPath = new ArrayList<>();
+    public static final List<Rs2NpcModel> sortedFires = new CopyOnWriteArrayList<>();
+    public static final List<GameObject> sortedClouds = new CopyOnWriteArrayList<>();
+    public static final List<Rs2NpcModel> fishSpots = new CopyOnWriteArrayList<>();
+    public static List<WorldPoint> walkPath = Collections.emptyList();
 
     public boolean run(TemporossConfig config) {
         temporossConfig = config;
@@ -182,7 +183,7 @@ public class TemporossScript extends Script {
         workArea = null;
         isFilling = false;
         isFightingFire = false;
-        walkPath = null;
+        walkPath = Collections.emptyList();
         TemporossPlugin.incomingWave = false;
         TemporossPlugin.isTethered = false;
         TemporossPlugin.fireClouds = 0;
@@ -453,10 +454,11 @@ public class TemporossScript extends Script {
                 .map(Rs2NpcModel::new)
                 .collect(Collectors.toList());
         Rs2WorldPoint playerLocation = new Rs2WorldPoint(Microbot.getClient().getLocalPlayer().getWorldLocation());
-        sortedFires = allFires.stream()
+        sortedFires.clear();
+        sortedFires.addAll(allFires.stream()
                 .filter(y -> playerLocation.distanceToPath(y.getWorldLocation()) < 35)
                 .sorted(Comparator.comparingInt(x -> playerLocation.distanceToPath(x.getWorldLocation())))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
         TemporossOverlay.setNpcList(sortedFires);
     }
 
@@ -465,17 +467,17 @@ public class TemporossScript extends Script {
                 .filter(obj -> obj.getId() == NullObjectID.NULL_41006)
                 .collect(Collectors.toList());
         Rs2WorldPoint playerLocation = new Rs2WorldPoint(Microbot.getClient().getLocalPlayer().getWorldLocation());
-        sortedClouds = allClouds.stream()
+        sortedClouds.clear();
+        sortedClouds.addAll(allClouds.stream()
                 .filter(y -> playerLocation.distanceToPath(y.getWorldLocation()) < 30)
                 .sorted(Comparator.comparingInt(x -> playerLocation.distanceToPath(x.getWorldLocation())))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
         TemporossOverlay.setCloudList(sortedClouds);
     }
 
     // update ammo crate data
     public static void updateAmmoCrateData(){
-        List<Rs2NpcModel> ammoCrates = Rs2Npc
-                .getNpcs()
+        List<Rs2NpcModel> ammoCrates = Rs2Npc.getNpcs()
                 .filter(npc -> Arrays.asList(npc.getComposition().getActions()).contains("Fill"))
                 .filter(npc -> npc.getWorldLocation().distanceTo(workArea.mastPoint) <= 4)
                 .filter(npc -> !inCloud(npc.getWorldLocation(),2))
@@ -486,13 +488,13 @@ public class TemporossScript extends Script {
 
     public static void updateFishSpotData(){
         // if double fishing spot is present, prioritize it
-        fishSpots = Rs2Npc.getNpcs()
+        fishSpots.clear();
+        fishSpots.addAll(Rs2Npc.getNpcs()
                 .filter(npc -> npc.getId() == NpcID.FISHING_SPOT_10569 || npc.getId() == NpcID.FISHING_SPOT_10568 || npc.getId() == NpcID.FISHING_SPOT_10565)
                 .filter(npc -> !inCloud(npc.getRuneliteNpc().getWorldLocation(),2))
                 .filter(npc -> npc.getWorldLocation().distanceTo(workArea.rangePoint) <= 20)
-                .sorted(Comparator
-                        .comparingInt(npc -> npc.getId() == NpcID.FISHING_SPOT_10569 ? 0 : 1))
-                .collect(Collectors.toList());
+                .sorted(Comparator.comparingInt(npc -> npc.getId() == NpcID.FISHING_SPOT_10569 ? 0 : 1))
+                .collect(Collectors.toList()));
         TemporossOverlay.setFishList(fishSpots);
     }
 
@@ -899,8 +901,7 @@ public class TemporossScript extends Script {
 
     // method to fight fires that is in a path to a location
     public boolean fightFiresInPath(WorldPoint location) {
-        Rs2WorldPoint playerLocation = new Rs2WorldPoint(Microbot.getClient().getLocalPlayer().getWorldLocation());
-        List<WorldPoint> walkerPath = playerLocation.pathTo(location,true);
+        List<WorldPoint> walkerPath = Rs2Player.getRs2WorldPoint().pathTo(location,true);
         walkPath = walkerPath;
         if (sortedFires.isEmpty()) {
             return true;
